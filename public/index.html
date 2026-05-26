@@ -26,7 +26,7 @@
   <meta property="twitter:url" content="https://brack0.dev/" />
   <meta property="twitter:title" content="Denis Souron | Software Engineer" />
   <meta property="twitter:description" content="Building resilient systems for humans." />
-  <meta property="twitter:image" content="https://brack0.dev/og-image.png" />
+  <meta property="twitter:image" content="https://brack0.dev/og_image.png" />
 
   <link rel="icon" href="favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
@@ -64,7 +64,7 @@
 
         setTimeout(() => preloader.classList.add('loaded'), 3650);
       } else {
-        preloader.classList.add('loaded');
+        preloader.classList.add('ignored');
       }
 
       window.removeEventListener('load', bootSequence);
