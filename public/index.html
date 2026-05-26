@@ -29,9 +29,8 @@
     window.addEventListener('load', bootSequence);
 
     function bootSequence() {
+      const preloader = document.getElementById('preloader');
       if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        const preloader = document.getElementById('preloader');
-        preloader.classList.add('visible');
         document.querySelectorAll('.boot-line').forEach(line => {
           const startMs = parseInt(line.dataset.startMs) || 0;
           setTimeout(() => {
@@ -46,7 +45,9 @@
           }, startMs);
         });
 
-        setTimeout(() => preloader.classList.remove('visible'), 3650);
+        setTimeout(() => preloader.classList.add('loaded'), 3650);
+      } else {
+        preloader.classList.add('loaded');
       }
 
       window.removeEventListener('load', bootSequence);

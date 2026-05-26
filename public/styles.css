@@ -153,6 +153,7 @@
   canvas {
     position: fixed;
     inset: 0;
+    pointer-events: none;
   }
 
   h1 {
@@ -209,15 +210,13 @@
     z-index: 9999;
     background: var(--bg-dark);
     display: flex;
-    opacity: 0;
-    visibility: hidden;
     align-items: center;
     justify-content: center;
     transition: opacity 1.2s ease, visibility 1.2s ease;
 
-    &.visible {
-      opacity: 1;
-      visibility: visible;
+    &.loaded {
+      opacity: 0;
+      visibility: hidden;
       transition: none;
     }
   }
@@ -228,13 +227,14 @@
     color: var(--blue);
     --boot-line-height: 1.8;
     line-height: var(--boot-line-height);
-    font-size: clamp(0.85rem, 1vw, 1rem);
+    font-size: clamp(0.65rem, 1vw, 1rem);
     text-shadow: 0 0 8px color-mix(in srgb, var(--blue) 60%, transparent);
   }
 
   .boot-line {
     opacity: 0;
     height: calc(var(--boot-line-height) * 1em);
+    white-space: nowrap;
 
     &.visible {
       opacity: 1;
@@ -385,6 +385,7 @@
     color: color-mix(in srgb, var(--text) 45%, transparent);
     letter-spacing: 4px;
     text-transform: uppercase;
+    white-space: nowrap;
     font-size: var(--size-sm);
     animation: pulse 2s infinite;
 
@@ -548,7 +549,7 @@
     font-family: var(--font-mono);
     text-transform: uppercase;
     letter-spacing: 2px;
-    color: color-mix(in srgb, var(--text) 55%, transparent);
+    color: color-mix(in srgb, var(--text) 65%, transparent);
     transition:
       border-color var(--transition),
       color var(--transition),
