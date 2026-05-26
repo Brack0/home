@@ -1,178 +1,168 @@
-// PRELOADER
-window.addEventListener('load', () => {
-  const preloader = document.getElementById('preloader');
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// CANVAS — particle space background
+(function () {
+  const canvas = document.getElementById('space');
+  if (!canvas) return;
 
-  if (reduced) {
-    document.querySelectorAll('.boot-line').forEach(l => l.classList.add('visible'));
-    preloader.classList.add('hidden');
-    return;
+  // ─── CONSTANTS ────────────────────────────────────────────────────────────
+  const TWO_PI              = Math.PI * 2;
+  const STAR_COUNT          = 120;
+  const PARTICLE_COUNT      = 80;
+  const TARGET_FPS          = 30;
+  const FRAME_INTERVAL      = 1000 / TARGET_FPS;
+  const RESIZE_DEBOUNCE_MS  = 200;
+
+  // ─── CONTEXT & MOTION ─────────────────────────────────────────────────────
+  const ctx             = canvas.getContext('2d', { desynchronized: true });
+  const isReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ─── STATE ────────────────────────────────────────────────────────────────
+  let width         = window.innerWidth;
+  let height        = window.innerHeight;
+  let gradient      = null;
+  let animationId   = null;
+  let lastFrameTime = 0;
+  let resizeTimer   = null;
+
+  // ─── TYPED ARRAYS (SoA) ───────────────────────────────────────────────────
+  const starX          = new Float32Array(STAR_COUNT);
+  const starY          = new Float32Array(STAR_COUNT);
+  const starRadius     = new Float32Array(STAR_COUNT);
+  const starAlpha      = new Float32Array(STAR_COUNT);
+  const starAlphaSpeed = new Float32Array(STAR_COUNT);
+  const starAlphaDelta = new Int8Array(STAR_COUNT);   // -1 or 1
+
+  const particleX      = new Float32Array(PARTICLE_COUNT);
+  const particleY      = new Float32Array(PARTICLE_COUNT);
+  const particleRadius = new Float32Array(PARTICLE_COUNT);
+  const particleSpeed  = new Float32Array(PARTICLE_COUNT);
+  const particleAlpha  = new Float32Array(PARTICLE_COUNT);
+
+  // ─── FUNCTIONS ────────────────────────────────────────────────────────────
+  function buildGradient() {
+    const g = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, 500);
+    g.addColorStop(0, 'rgba(93,183,255,0.05)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    gradient = g;
   }
 
-  bootSequence(preloader);
-});
-
-function bootSequence(preloader) {
-  document.querySelectorAll('.boot-line').forEach(line => {
-    const startMs = parseInt(line.dataset.startMs) || 0;
-    setTimeout(() => {
-      line.classList.add('visible');
-      switch (line.dataset.effect) {
-        case 'progress': bootProgress(line); break;
-        case 'counter':  bootCounter(line);  break;
-        case 'typing':   bootTyping(line);   break;
-        case 'cursor':   bootCursor(line);   break;
-        // 'flicker' is handled entirely by CSS on .visible
-      }
-    }, startMs);
-  });
-
-  setTimeout(() => preloader.classList.add('hidden'), 3650);
-}
-
-function bootProgress(line) {
-  const barLen   = parseInt(line.dataset.barLen)   || 20;
-  const duration = parseInt(line.dataset.duration) || 750;
-  const wrap = document.createElement('span');
-  wrap.className = 'boot-bar-wrap';
-  line.appendChild(wrap);
-
-  let step = 0;
-  const timer = setInterval(() => {
-    const pct = Math.round((step / barLen) * 100);
-    wrap.textContent = ' [' + '█'.repeat(step) + '░'.repeat(barLen - step) + '] ' + pct + '%';
-    step++;
-    if (step > barLen) clearInterval(timer);
-  }, duration / (barLen + 1));
-}
-
-function bootCounter(line) {
-  const duration = parseInt(line.dataset.duration) || 1400;
-  const pct = document.createElement('span');
-  pct.textContent = '... 0%';
-  line.appendChild(pct);
-
-  let n = 0;
-  const timer = setInterval(() => {
-    n = Math.min(n + 1, 100);
-    pct.textContent = '... ' + n + '%';
-    if (n >= 100) {
-      clearInterval(timer);
-      pct.textContent = '... 100% ✓';
+  function initStars() {
+    for (let i = 0; i < STAR_COUNT; i++) {
+      starX[i]          = Math.random() * width;
+      starY[i]          = Math.random() * height;
+      starRadius[i]     = Math.random() * 1.5 + 0.5;
+      starAlpha[i]      = Math.random() * 0.6 + 0.1;
+      starAlphaSpeed[i] = Math.random() * 0.008 + 0.002;
+      starAlphaDelta[i] = Math.random() > 0.5 ? 1 : -1;
     }
-  }, duration / 100);
-}
+  }
 
-function bootTyping(line) {
-  const speedMs  = parseInt(line.dataset.speedMs) || 55;
-  const fullText = line.textContent;
-  line.textContent = '';
+  function initParticles() {
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particleX[i]      = Math.random() * width;
+      particleY[i]      = Math.random() * height;
+      particleRadius[i] = Math.random() * 1.5;
+      particleSpeed[i]  = Math.random() * 0.2 + 0.05;
+      particleAlpha[i]  = Math.random() * 0.6;
+    }
+  }
 
-  let i = 0;
-  const timer = setInterval(() => {
-    line.textContent += fullText[i++];
-    if (i >= fullText.length) clearInterval(timer);
-  }, speedMs);
-}
+  function update() {
+    for (let i = 0; i < STAR_COUNT; i++) {
+      starAlpha[i] += starAlphaSpeed[i] * starAlphaDelta[i];
+      if (starAlpha[i] >= 0.9)  { starAlpha[i] = 0.9;  starAlphaDelta[i] = -1; }
+      if (starAlpha[i] <= 0.05) { starAlpha[i] = 0.05; starAlphaDelta[i] =  1; }
+    }
 
-function bootCursor(line) {
-  const loops    = parseInt(line.dataset.loops)    || 0;
-  const duration = loops > 0 ? loops * 400 : parseInt(line.dataset.duration) || 700;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particleY[i] += particleSpeed[i];
+      if (particleY[i] > height) {
+        particleY[i] = 0;
+        particleX[i] = Math.random() * width;
+      }
+    }
+  }
 
-  const cursor = document.createElement('span');
-  cursor.className = 'boot-cursor';
-  cursor.textContent = '_';
-  line.appendChild(cursor);
+  function drawFrame() {
+    ctx.clearRect(0, 0, width, height);
 
-  const badge = document.createElement('span');
-  badge.className = 'boot-badge';
-  badge.textContent = ' [ OK ]';
-  line.appendChild(badge);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
 
-  setTimeout(() => {
-    cursor.remove();
-    badge.classList.add('show');
-  }, duration);
-}
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = '#ffffff';
 
-// STARS
-const starsContainer = document.getElementById('stars');
+    for (let i = 0; i < STAR_COUNT; i++) {
+      ctx.globalAlpha = starAlpha[i];
+      ctx.beginPath();
+      ctx.arc(starX[i], starY[i], starRadius[i], 0, TWO_PI);
+      ctx.fill();
+    }
 
-for (let i = 0; i < 180; i++) {
-  const star = document.createElement('div');
-  star.classList.add('star');
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      ctx.globalAlpha = particleAlpha[i];
+      ctx.beginPath();
+      ctx.arc(particleX[i], particleY[i], particleRadius[i], 0, TWO_PI);
+      ctx.fill();
+    }
 
-  star.style.left = Math.random() * 100 + '%';
-  star.style.top = Math.random() * 100 + '%';
-  star.style.animationDuration = (Math.random() * 4 + 2) + 's';
-  star.style.animationDelay = Math.random() * 5 + 's';
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
 
-  const size = Math.random() * 2 + 1;
-  star.style.width = size + 'px';
-  star.style.height = size + 'px';
+  function startAnimation() {
+    if (animationId !== null) return;
+    animationId = requestAnimationFrame(animateLoop);
+  }
 
-  starsContainer.appendChild(star);
-}
+  function stopAnimation() {
+    if (animationId !== null) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+    }
+  }
 
-// PARTICLE SPACE CANVAS
-const canvas = document.getElementById('space');
-if (canvas) {
-  const ctx = canvas.getContext('2d');
+  function animateLoop(timestamp) {
+    animationId = requestAnimationFrame(animateLoop);
 
-  let w = canvas.width = window.innerWidth;
-  let h = canvas.height = window.innerHeight;
+    if (timestamp - lastFrameTime < FRAME_INTERVAL) return;
+    lastFrameTime = timestamp;
 
+    update();
+    drawFrame();
+  }
+
+  function onResize() {
+    width         = window.innerWidth;
+    height        = window.innerHeight;
+    canvas.width  = width;
+    canvas.height = height;
+    buildGradient();
+    initStars();
+    initParticles();
+    if (isReducedMotion) drawFrame();
+  }
+
+  // ─── EVENTS ───────────────────────────────────────────────────────────────
   window.addEventListener('resize', () => {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(onResize, RESIZE_DEBOUNCE_MS);
   });
 
-  const particles = [];
+  document.addEventListener('visibilitychange', () => {
+    if (!isReducedMotion) {
+      if (document.hidden) stopAnimation();
+      else startAnimation();
+    }
+  });
 
-  for (let i = 0; i < 120; i++) {
-    particles.push({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      radius: Math.random() * 1.5,
-      speed: Math.random() * 0.2 + 0.05,
-      alpha: Math.random() * 0.6
-    });
-  }
+  // ─── BOOTSTRAP ────────────────────────────────────────────────────────────
+  canvas.width  = width;
+  canvas.height = height;
+  buildGradient();
+  initStars();
+  initParticles();
 
-  function animate() {
-    ctx.clearRect(0, 0, w, h);
-
-    const gradient = ctx.createRadialGradient(
-      w / 2,
-      h / 2,
-      0,
-      w / 2,
-      h / 2,
-      500
-    );
-
-    gradient.addColorStop(0, 'rgba(93,183,255,0.05)');
-    gradient.addColorStop(1, 'rgba(0,0,0,0)');
-
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, w, h);
-
-    particles.forEach(p => {
-      p.y += p.speed;
-
-      if (p.y > h) {
-        p.y = 0;
-        p.x = Math.random() * w;
-      }
-
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,255,255,${p.alpha})`;
-      ctx.fill();
-    });
-
-    requestAnimationFrame(animate);
-  }
-
-  animate();
-}
+  if (isReducedMotion) drawFrame();
+  else startAnimation();
+}());

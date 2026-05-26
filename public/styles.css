@@ -33,32 +33,6 @@
    Global @keyframes — outside @layer for cross-layer access
    ========================================================== */
 
-@keyframes noiseMove {
-  0% {
-    transform: translate(0, 0);
-  }
-
-  50% {
-    transform: translate(1px, -1px);
-  }
-
-  100% {
-    transform: translate(-1px, 1px);
-  }
-}
-
-@keyframes fadeLine {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @keyframes pulse {
 
   0%,
@@ -71,19 +45,6 @@
   }
 }
 
-@keyframes twinkle {
-
-  0%,
-  100% {
-    opacity: .1;
-    transform: scale(.5);
-  }
-
-  50% {
-    opacity: .9;
-    transform: scale(1.4);
-  }
-}
 
 @keyframes blink {
 
@@ -96,11 +57,6 @@
   100% {
     opacity: 0;
   }
-}
-
-@keyframes bootBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
 }
 
 @keyframes bootFlicker {
@@ -133,7 +89,6 @@
   :root {
     /* Colors */
     --bg: #05070B;
-    --bg-soft: #0B1020;
     --bg-alt: #091120;
     --bg-dark: #000;
     --panel: rgba(10, 16, 30, 0.55);
@@ -152,11 +107,11 @@
     --font-mono: 'JetBrains Mono', monospace;
     --font-display: 'Orbitron', sans-serif;
     --font-body: 'Rajdhani', sans-serif;
-    --text-xs: .65rem;
-    --text-sm: .75rem;
-    --text-base: .85rem;
-    --text-md: 1.5rem;
-    --text-lg: 2rem;
+    --size-xs: .65rem;
+    --size-sm: .75rem;
+    --size-base: .85rem;
+    --size-md: 1.5rem;
+    --size-lg: 2rem;
 
     /* Spacing */
     --space-sm: 1rem;
@@ -198,7 +153,6 @@
   canvas {
     position: fixed;
     inset: 0;
-    z-index: -3;
   }
 
   h1 {
@@ -222,7 +176,6 @@
   }
 
   footer {
-    position: relative;
     padding-block: var(--space-xl) var(--section-padding);
     padding-inline: var(--space-lg);
     border-top: 1px solid color-mix(in srgb, var(--blue) 12%, transparent);
@@ -238,7 +191,7 @@
     background: var(--blue);
     color: var(--bg);
     padding: var(--space-sm) var(--space-md);
-    font: var(--text-base) var(--font-mono);
+    font: var(--size-base) var(--font-mono);
     letter-spacing: 2px;
     text-transform: uppercase;
     text-decoration: none;
@@ -250,49 +203,22 @@
     }
   }
 
-  .noise {
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    opacity: 0.05;
-    background-image:
-      radial-gradient(circle at 25% 25%, rgba(255, 255, 255, .2) 0 1px, transparent 1px),
-      radial-gradient(circle at 75% 75%, rgba(255, 255, 255, .15) 0 1px, transparent 1px);
-    background-size: 4px 4px;
-    pointer-events: none;
-    animation: noiseMove 0.3s infinite;
-
-    @media (prefers-reduced-motion: reduce) {
-      animation: none;
-    }
-  }
-
-  .scanlines {
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(to bottom,
-        rgba(255, 255, 255, 0.02),
-        rgba(255, 255, 255, 0.02) 1px,
-        transparent 1px,
-        transparent 3px);
-    pointer-events: none;
-    opacity: 0.08;
-    z-index: 20;
-  }
-
   #preloader {
     position: fixed;
     inset: 0;
+    z-index: 9999;
     background: var(--bg-dark);
     display: flex;
+    opacity: 0;
+    visibility: hidden;
     align-items: center;
     justify-content: center;
-    z-index: 9999;
     transition: opacity 1.2s ease, visibility 1.2s ease;
 
-    &.hidden {
-      opacity: 0;
-      visibility: hidden;
+    &.visible {
+      opacity: 1;
+      visibility: visible;
+      transition: none;
     }
   }
 
@@ -334,7 +260,7 @@
   .boot-cursor {
     display: inline-block;
     margin-inline-start: 4px;
-    animation: bootBlink 0.4s step-end infinite;
+    animation: blink 0.4s step-end infinite;
   }
 
   .boot-badge {
@@ -344,7 +270,7 @@
     opacity: 0;
     transition: opacity 0.2s ease;
 
-    &.show {
+    &.visible {
       opacity: 1;
     }
   }
@@ -353,7 +279,6 @@
     position: fixed;
     inset: 0;
     pointer-events: none;
-    z-index: 10;
     display: none;
 
     @media (min-width: 601px) {
@@ -363,13 +288,13 @@
 
   .hud-corner {
     position: absolute;
-    font: var(--text-xs) var(--font-mono);
+    font: var(--size-xs) var(--font-mono);
     color: color-mix(in srgb, var(--blue) 65%, transparent);
     letter-spacing: 2px;
     text-transform: uppercase;
 
     @media (min-width: 901px) {
-      font-size: var(--text-sm);
+      font-size: var(--size-sm);
     }
 
     .hud-line {
@@ -378,28 +303,28 @@
       margin: 8px 0;
     }
 
-    &.top-right .hud-line,
-    &.bottom-right .hud-line {
+    &.hud-corner-top-right .hud-line,
+    &.hud-corner-bottom-right .hud-line {
       background: linear-gradient(to left, var(--blue), transparent);
     }
 
-    &.top-left {
+    &.hud-corner-top-left {
       top: var(--space-lg);
       left: var(--space-lg);
     }
 
-    &.top-right {
+    &.hud-corner-top-right {
       top: var(--space-lg);
       right: var(--space-lg);
       text-align: end;
     }
 
-    &.bottom-left {
+    &.hud-corner-bottom-left {
       bottom: var(--space-lg);
       left: var(--space-lg);
     }
 
-    &.bottom-right {
+    &.hud-corner-bottom-right {
       bottom: var(--space-lg);
       right: var(--space-lg);
       text-align: end;
@@ -421,8 +346,6 @@
   }
 
   .hero-content {
-    position: relative;
-    z-index: 5;
     text-align: center;
     max-width: var(--content-width);
   }
@@ -462,33 +385,12 @@
     color: color-mix(in srgb, var(--text) 45%, transparent);
     letter-spacing: 4px;
     text-transform: uppercase;
-    font-size: var(--text-sm);
+    font-size: var(--size-sm);
     animation: pulse 2s infinite;
 
     @media (prefers-reduced-motion: reduce) {
       animation: none;
       opacity: .6;
-    }
-  }
-
-  .stars {
-    position: fixed;
-    inset: 0;
-    z-index: -2;
-    overflow: hidden;
-  }
-
-  .star {
-    position: absolute;
-    width: 2px;
-    height: 2px;
-    background: white;
-    border-radius: 50%;
-    opacity: .7;
-    animation: twinkle linear infinite;
-
-    @media (prefers-reduced-motion: reduce) {
-      animation: none;
     }
   }
 
@@ -503,15 +405,6 @@
     }
   }
 
-  .links-section {
-    position: relative;
-    z-index: 2;
-
-    @media (min-width: 901px) {
-      padding-block: 10rem;
-    }
-  }
-
   .section-label {
     font-family: var(--font-mono);
     letter-spacing: 5px;
@@ -520,14 +413,13 @@
     text-align: center;
   }
 
-  .links-grid {
+  .nav-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: var(--space-lg);
-    perspective: 1200px;
   }
 
-  .link-card {
+  .nav-card {
     display: block;
     text-decoration: none;
     color: inherit;
@@ -591,8 +483,6 @@
   }
 
   .card-inner {
-    position: relative;
-    z-index: 2;
     height: 100%;
     padding: var(--space-md);
     display: grid;
@@ -606,7 +496,7 @@
 
   .card-label {
     grid-area: label;
-    font: var(--text-sm) var(--font-mono);
+    font: var(--size-sm) var(--font-mono);
     letter-spacing: 3px;
     color: var(--blue);
     text-transform: uppercase;
@@ -615,13 +505,13 @@
   .card-index {
     grid-area: index;
     color: var(--ghost);
-    font: var(--text-lg) var(--font-display);
+    font: var(--size-lg) var(--font-display);
   }
 
   .card-title {
     grid-area: title;
     align-self: center;
-    font: var(--text-md) var(--font-display);
+    font: var(--size-md) var(--font-display);
     letter-spacing: 3px;
     text-transform: uppercase;
   }
@@ -632,7 +522,7 @@
     color: color-mix(in srgb, var(--text) 45%, transparent);
     font-family: var(--font-mono);
     letter-spacing: 2px;
-    font-size: var(--text-sm);
+    font-size: var(--size-sm);
   }
 
   .card-line {
@@ -644,14 +534,14 @@
     box-shadow: var(--glow);
   }
 
-  .secondary-grid {
+  .skill-grid {
     list-style: none;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: var(--space-sm);
   }
 
-  .secondary-item {
+  .skill-item {
     border: 1px solid color-mix(in srgb, var(--blue) 12%, transparent);
     padding: var(--space-sm);
     background: var(--surface);
@@ -678,7 +568,6 @@
     color: var(--blue);
     line-height: 2;
     text-shadow: 0 0 10px color-mix(in srgb, var(--blue) 35%, transparent);
-    position: relative;
 
     &::after {
       content: '_';

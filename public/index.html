@@ -17,49 +17,145 @@
   <meta property="og:profile:last_name" content="Souron">
   <meta property="og:profile:username" content="brack0">
 
+  <link rel="preload" href="fonts/JetBrainsMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/Orbitron-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/Rajdhani-Regular.woff2" as="font" type="font/woff2" crossorigin>
+
   <link rel="stylesheet" href="styles.css">
+
+  <script src="script.js" defer></script>
+
+  <script>
+    window.addEventListener('load', bootSequence);
+
+    function bootSequence() {
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const preloader = document.getElementById('preloader');
+        preloader.classList.add('visible');
+        document.querySelectorAll('.boot-line').forEach(line => {
+          const startMs = parseInt(line.dataset.startMs) || 0;
+          setTimeout(() => {
+            line.classList.add('visible');
+            switch (line.dataset.effect) {
+              case 'progress': bootProgress(line); break;
+              case 'counter': bootCounter(line); break;
+              case 'typing': bootTyping(line); break;
+              case 'cursor': bootCursor(line); break;
+              // 'flicker' is handled entirely by CSS on .visible
+            }
+          }, startMs);
+        });
+
+        setTimeout(() => preloader.classList.remove('visible'), 3650);
+      }
+
+      window.removeEventListener('load', bootSequence);
+    }
+
+    function bootProgress(line) {
+      const barLen = parseInt(line.dataset.barLen) || 20;
+      const duration = parseInt(line.dataset.duration) || 750;
+      const wrap = document.createElement('span');
+      wrap.className = 'boot-bar-wrap';
+      line.appendChild(wrap);
+
+      let step = 0;
+      const timer = setInterval(() => {
+        wrap.textContent = ' [' + '█'.repeat(step) + '░'.repeat(barLen - step) + ']';
+        step++;
+        if (step > barLen) {
+          wrap.textContent = ' [' + '█'.repeat(barLen) + '] ✓';
+          clearInterval(timer);
+        }
+      }, duration / (barLen + 1));
+    }
+
+    function bootCounter(line) {
+      const duration = parseInt(line.dataset.duration) || 1400;
+      const pct = document.createElement('span');
+      pct.textContent = '... 0%';
+      line.appendChild(pct);
+
+      let n = 0;
+      const timer = setInterval(() => {
+        n = Math.min(n + 1, 100);
+        pct.textContent = '... ' + n + '%';
+        if (n >= 100) {
+          clearInterval(timer);
+          pct.textContent = '... 100%';
+        }
+      }, duration / 100);
+    }
+
+    function bootTyping(line) {
+      const speedMs = parseInt(line.dataset.speedMs) || 55;
+      const fullText = line.textContent;
+      line.textContent = '';
+
+      let i = 0;
+      const timer = setInterval(() => {
+        line.textContent += fullText[i++];
+        if (i >= fullText.length) clearInterval(timer);
+      }, speedMs);
+    }
+
+    function bootCursor(line) {
+      const loops = parseInt(line.dataset.loops) || 0;
+      const duration = loops > 0 ? loops * 400 : parseInt(line.dataset.duration) || 700;
+
+      const cursor = document.createElement('span');
+      cursor.className = 'boot-cursor';
+      cursor.textContent = '_';
+      line.appendChild(cursor);
+
+      const badge = document.createElement('span');
+      badge.className = 'boot-badge';
+      badge.textContent = ' [ OK ]';
+      line.appendChild(badge);
+
+      setTimeout(() => {
+        cursor.remove();
+        badge.classList.add('visible');
+      }, duration);
+    }
+  </script>
 </head>
 
 <body>
-
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
   <div id="preloader" aria-hidden="true">
     <div class="boot">
-      <div class="boot-line" data-effect="progress" data-start-ms="200"  data-duration="750" data-bar-len="20">INITIALIZING EXTRANET</div>
-      <div class="boot-line" data-effect="counter"  data-start-ms="1250" data-duration="1400">SYNCING MASS RELAYS</div>
-      <div class="boot-line" data-effect="typing"   data-start-ms="1250" data-speed-ms="55">LOADING NAVIGATION SYSTEM</div>
-      <div class="boot-line" data-effect="cursor"   data-start-ms="2050" data-loops="2">CALIBRATING OMNI-SKILL MATRIX</div>
-      <div class="boot-line" data-effect="flicker"  data-start-ms="2850">SYSTEM ONLINE</div>
+      <div class="boot-line" data-effect="progress" data-start-ms="200" data-duration="750" data-bar-len="20">INITIALIZING EXTRANET</div>
+      <div class="boot-line" data-effect="counter" data-start-ms="1250" data-duration="1400">SYNCING MASS RELAYS</div>
+      <div class="boot-line" data-effect="typing" data-start-ms="1250" data-speed-ms="55">LOADING NAVIGATION SYSTEM</div>
+      <div class="boot-line" data-effect="cursor" data-start-ms="2050" data-loops="2">CALIBRATING OMNI-SKILL MATRIX</div>
+      <div class="boot-line" data-effect="flicker" data-start-ms="2850">SYSTEM ONLINE</div>
     </div>
   </div>
 
   <canvas id="space" aria-hidden="true"></canvas>
 
-  <div class="stars" id="stars" aria-hidden="true"></div>
-  <div class="noise" aria-hidden="true"></div>
-  <div class="scanlines" aria-hidden="true"></div>
-
   <div class="hud" aria-hidden="true">
-    <div class="hud-corner top-left">
+    <div class="hud-corner hud-corner-top-left">
       SYS//ACTIVE
       <div class="hud-line"></div>
       NODE//NANTES
     </div>
 
-    <div class="hud-corner top-right">
+    <div class="hud-corner hud-corner-top-right">
       MASS RELAY
       <div class="hud-line"></div>
       STATUS//ONLINE
     </div>
 
-    <div class="hud-corner bottom-left">
+    <div class="hud-corner hud-corner-bottom-left">
       FRONTEND SYSTEMS
       <div class="hud-line"></div>
       SIGNAL//STABLE
     </div>
 
-    <div class="hud-corner bottom-right">
+    <div class="hud-corner hud-corner-bottom-right">
       DS//2026
       <div class="hud-line"></div>
       TRANSMISSION ACTIVE
@@ -67,7 +163,6 @@
   </div>
 
   <main id="main-content">
-
     <section class="hero">
       <div class="hero-content">
         <hgroup>
@@ -85,69 +180,68 @@
       <div class="scroll-indicator" aria-hidden="true">Scroll To Continue</div>
     </section>
 
-    <section class="section links-section">
+    <section class="section">
       <hgroup>
         <p class="section-label">Extranet Access</p>
         <h2>Navigation Grid</h2>
       </hgroup>
 
-      <div class="links-grid">
-
-        <a href="https://github.com/Brack0" target="_blank" rel="noopener noreferrer" class="link-card" aria-labelledby="card-1">
+      <div class="nav-grid">
+        <a href="https://github.com/Brack0" target="_blank" rel="noopener noreferrer" class="nav-card" aria-labelledby="card-github">
           <div class="card-inner">
             <span class="card-label">Node</span>
             <span class="card-index">01</span>
-            <div class="card-title" id="card-1">GitHub</div>
+            <div class="card-title" id="card-github">GitHub</div>
             <span class="card-action">Access</span>
             <div class="card-line"></div>
           </div>
         </a>
 
-        <a href="https://www.linkedin.com/in/denis-souron" target="_blank" rel="noopener noreferrer" class="link-card" aria-labelledby="card-2">
+        <a href="https://www.linkedin.com/in/denis-souron" target="_blank" rel="noopener noreferrer" class="nav-card" aria-labelledby="card-linkedin">
           <div class="card-inner">
             <span class="card-label">Node</span>
             <span class="card-index">02</span>
-            <div class="card-title" id="card-2">LinkedIn</div>
+            <div class="card-title" id="card-linkedin">LinkedIn</div>
             <span class="card-action">Access</span>
             <div class="card-line"></div>
           </div>
         </a>
 
-        <a href="https://front-end-chronicles.github.io/" target="_blank" rel="noopener noreferrer" class="link-card" aria-labelledby="card-3">
+        <a href="https://front-end-chronicles.github.io/" target="_blank" rel="noopener noreferrer" class="nav-card" aria-labelledby="card-podcast">
           <div class="card-inner">
             <span class="card-label">Node</span>
             <span class="card-index">03</span>
-            <div class="card-title" id="card-3">Podcast</div>
+            <div class="card-title" id="card-podcast">Podcast</div>
             <span class="card-action">Access</span>
             <div class="card-line"></div>
           </div>
         </a>
 
-        <a href="https://youtu.be/9DAEmX7jguQ" target="_blank" rel="noopener noreferrer" class="link-card" aria-labelledby="card-4">
+        <a href="https://youtu.be/9DAEmX7jguQ" target="_blank" rel="noopener noreferrer" class="nav-card" aria-labelledby="card-talks">
           <div class="card-inner">
             <span class="card-label">Node</span>
             <span class="card-index">04</span>
-            <div class="card-title" id="card-4">Talks</div>
+            <div class="card-title" id="card-talks">Talks</div>
             <span class="card-action">Access</span>
             <div class="card-line"></div>
           </div>
         </a>
 
-        <a href="https://blog.brack0.dev/" target="_blank" rel="noopener noreferrer" class="link-card" aria-labelledby="card-5">
+        <a href="https://blog.brack0.dev/" target="_blank" rel="noopener noreferrer" class="nav-card" aria-labelledby="card-articles">
           <div class="card-inner">
             <span class="card-label">Node</span>
             <span class="card-index">05</span>
-            <div class="card-title" id="card-5">Articles</div>
+            <div class="card-title" id="card-articles">Articles</div>
             <span class="card-action">Access</span>
             <div class="card-line"></div>
           </div>
         </a>
 
-        <a href="https://x.com/Brack0_Dev" target="_blank" rel="noopener noreferrer" class="link-card" aria-labelledby="card-6">
+        <a href="https://x.com/Brack0_Dev" target="_blank" rel="noopener noreferrer" class="nav-card" aria-labelledby="card-network">
           <div class="card-inner">
             <span class="card-label">Node</span>
             <span class="card-index">06</span>
-            <div class="card-title" id="card-6">Network</div>
+            <div class="card-title" id="card-network">Network</div>
             <span class="card-action">Access</span>
             <div class="card-line"></div>
           </div>
@@ -162,21 +256,21 @@
         <h2>Omni-Skill Matrix</h2>
       </hgroup>
 
-      <ul class="secondary-grid">
-        <li class="secondary-item">Frontend Application Architecture</li>
-        <li class="secondary-item">API Design</li>
-        <li class="secondary-item">Design Patterns & Clean Code</li>
-        <li class="secondary-item">Web Performance Optimization</li>
-        <li class="secondary-item">Advanced State Management</li>
-        <li class="secondary-item">CI/CD & DevOps Practices</li>
-        <li class="secondary-item">Cloud-Native Development</li>
-        <li class="secondary-item">Micro-Frontends & Modularity</li>
-        <li class="secondary-item">Web Application Security</li>
-        <li class="secondary-item">Technical Project Management</li>
-        <li class="secondary-item">Hexagonal Architecture</li>
-        <li class="secondary-item">Developer Experience (DX)</li>
-        <li class="secondary-item">Code Migration & Modernization</li>
-        <li class="secondary-item">Technical Collaboration & Mentoring</li>
+      <ul class="skill-grid">
+        <li class="skill-item">Frontend Application Architecture</li>
+        <li class="skill-item">API Design</li>
+        <li class="skill-item">Design Patterns & Clean Code</li>
+        <li class="skill-item">Web Performance Optimization</li>
+        <li class="skill-item">Advanced State Management</li>
+        <li class="skill-item">CI/CD & DevOps Practices</li>
+        <li class="skill-item">Cloud-Native Development</li>
+        <li class="skill-item">Micro-Frontends & Modularity</li>
+        <li class="skill-item">Web Application Security</li>
+        <li class="skill-item">Technical Project Management</li>
+        <li class="skill-item">Hexagonal Architecture</li>
+        <li class="skill-item">Developer Experience (DX)</li>
+        <li class="skill-item">Code Migration & Modernization</li>
+        <li class="skill-item">Technical Collaboration & Mentoring</li>
       </ul>
     </section>
 
@@ -198,8 +292,6 @@
       </div>
     </div>
   </footer>
-
-  <script src="script.js"></script>
 </body>
 
 </html>
